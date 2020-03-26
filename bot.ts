@@ -1,11 +1,6 @@
 import { prefix } from './config.json';
 import * as discord from 'discord.js';
-
-
-interface Message {
-    text: string;
-    image?: string;
-}
+import { Message } from './message.interface';
 
 interface Behavior {
     name: string;
@@ -15,12 +10,17 @@ interface Behavior {
 
 
 export class Bot {
+    public readonly botName: string = 'SaladTossBot';
 
+    // Legit
     private coinTossed: Message = { text: `Here's a coin for you`, image: 'THCnhJPopHF2o9Cdeb' };
     public thereYouGo: Message = { text: `Let's see... ah, there you go!`, image: 'ZRMo8QM6M7lM4' };
     public totalCoins: Message = { text: `Present coin purses!` };
     public greeting: Message = { text: `Hello there!` };
     public resetCoins: Message = { text: `All coins tossed!` };
+    public tossMe: Message = { text: `No thanks, my purse is already full!` };
+    // Errors
+    public noMember: Message = { text: `Huh?` };
 
     public behaviors: Behavior[];
 
@@ -35,8 +35,10 @@ export class Bot {
     }
 
     tossCoin = (msg: discord.Message | discord.PartialMessage) => {
-        const member = msg.mentions.members.first();
         let response: Message = this.coinTossed;
+        const member = msg.mentions.members.first();
+        if (!member) return this.noMember;
+        if (member.displayName == this.botName) return this.tossMe;
         response.text = `${response.text} ${member.displayName}!`;
         return response;
     }

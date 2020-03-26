@@ -1,6 +1,7 @@
 import * as discord from 'discord.js';
 import * as config from './config.json';
 import { Bot } from './bot';
+import { Message } from './message.interface';
 
 const client = new discord.Client();
 const coinTossMsg: string = `Here's a coin for you `;
