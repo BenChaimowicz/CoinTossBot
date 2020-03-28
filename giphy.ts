@@ -17,7 +17,6 @@ export class Giphy {
             } else {
                 gif = cache;
             }
-            console.log(gif, this.cache);
             return gif;
         } catch (err) { return 'error' };
     }
