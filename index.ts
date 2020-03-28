@@ -2,28 +2,29 @@ import * as discord from 'discord.js';
 import * as config from './config.json';
 import { Bot } from './bot';
 import { Message } from './message.interface';
-import { Giphy } from './giphy';
 import { Bank } from './bank';
+import { Giphy } from './giphy';
 
 const client = new discord.Client();
-const giphy = new Giphy();
 const bank = new Bank();
+const giphy = new Giphy();
 
 client.once('ready', () => {
     console.log('Bot running!');
 });
 
-client.on('message', msg => {
+client.on('message', async msg => {
     if (!msg.content.startsWith(config.prefix)) return;
 
-    const bot: Bot = new Bot(bank);
+    const bot: Bot = new Bot(bank, giphy);
     const behavior = bot.behaviors.find(b => msg.content.startsWith(b.trigger));
     if (msg.guild.me.nickname !== bot.name) { msg.guild.me.setNickname(bot.name) };
 
     if (behavior) {
         if (!behavior.activity) {
-            const response = behavior.action(msg);
-            msg.channel.send(response.text);
+            const response = await behavior.action(msg);
+            if (!response.image) { msg.channel.send(response.text) }
+            else { msg.channel.send(response.text, { files: [response.image] }) };
         } else { client.user.setActivity(behavior.action(msg).text) };
     }
     // if (msg.content.startsWith(`${config.prefix}toss`)) {
