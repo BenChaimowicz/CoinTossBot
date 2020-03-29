@@ -19,12 +19,13 @@ export class Bot {
 
 
     // Legit
-    private coinTossed: Message = { text: `Here's a coin for you`, image: 'THCnhJPopHF2o9Cdeb' };
+    private coinTossed: Message = { text: `tossed a coin at you!`, image: 'THCnhJPopHF2o9Cdeb' };
     private thereYouGo: Message = { text: `Let's see... ah, there you go!`, image: 'ZRMo8QM6M7lM4' };
     private totalCoins: Message = { text: `Toss-tal annihilation!` };
     private greeting: Message = { text: `Hello there!`, image: 'd90kZTTu9ikG4' };
-    private resetCoins: Message = { text: `All coins tossed!` };
+    private resetCoins: Message = { text: `Tossing all your coins at myself!` };
     private tossMe: Message = { text: `No tossing at me, my purse is already full!` };
+    private tosser: Message = { text: `is the biggest tosser of them all!`, image: 'co8lBIKHZPs52' };
     // Errors
     private noMember: Message = { text: `Huh?` };
     private emptyBank: Message = { text: `No coins tossed...`, image: 'UrPISv4AWxFDx7mRxI' };
@@ -49,12 +50,10 @@ export class Bot {
             { name: 'Greet', trigger: prefix + 'hello', action: this.greet },
             { name: 'Reset', trigger: prefix + 'reset', action: this.resetBank },
             { name: 'TossAtActivity', trigger: prefix + 'dontstoptossingat', action: this.tossAtActivity, activity: true },
+            { name: 'Tosser', trigger: prefix + 'biggest', action: this.biggestTosser }
         ]
     }
     // Helpers
-    private generateMentionForMember = (member: discord.GuildMember): string => {
-        return `<@${member.user.id}>`
-    }
     private getImage = async (imageId: string): Promise<string> => {
         try {
             const fileURL = await this.giphy.getGifById(imageId);
@@ -68,7 +67,7 @@ export class Bot {
     tossAtActivity = (msg: discord.Message | discord.PartialMessage) => {
         const member = msg.mentions.members.first();
         if (!member) return this.activityToss;
-        return { ...this.activityToss, text: `${this.activityToss} at ${member.displayName}` };
+        return { ...this.activityToss, text: `${this.activityToss.text} at ${member.displayName}` };
     }
 
     greet = async (msg: discord.Message | discord.PartialMessage) => {
@@ -79,19 +78,20 @@ export class Bot {
     // Trigger Functions
     tossCoin = async (msg: discord.Message | discord.PartialMessage) => {
         let response: Message = this.coinTossed;
+        const author: { username, id } = msg.author;
         const member = msg.mentions.members.first();
         if (!member) return this.noMember;
         if (member.displayName == this.name) return this.tossMe;
-        response.text = `${response.text} ${this.generateMentionForMember(member)}!`;
+        response.text = `Hey <@${member.user.id}>, catch! <@${author.id}> ${response.text}`;
         response.image = await this.getImage(response.image);
-        this.bank.addCoin(member.user.id, member.user.username);
+        this.bank.addCoin(member.user.id, member.user.username, author.id, author.username);
         return response;
     }
 
     showTotal = async (msg: discord.Message | discord.PartialMessage) => {
         let response: Message = this.emptyBank;
         const bankRes = this.bank.listAccounts();
-        if (bankRes.length <= 0) {
+        if (bankRes.length <= 0 || bankRes == '``````') {
             response.image = await this.getImage(response.image);
         } else {
             response = this.totalCoins;
@@ -107,6 +107,20 @@ export class Bot {
     }
 
     resetBank = async (msg: discord.Message | discord.PartialMessage) => {
-        let response: Message = this.resetCoins;
+        this.bank.resetAccounts();
+        return this.resetCoins;
+    }
+
+    biggestTosser = async (msg: discord.Message | discord.PartialMessage) => {
+        const biggest = this.bank.biggestSpender();
+        let response: Message = this.emptyBank;
+        if (!Boolean(biggest)) {
+            response.image = await this.getImage(response.image);
+        } else {
+            response = this.tosser;
+            response.image = await this.getImage(response.image);
+            response.text = `<@${biggest.userId}> ${response.text} ${biggest.tossed} coins tossed!`;
+        }
+        return response;
     }
 }
